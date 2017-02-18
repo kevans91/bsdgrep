@@ -109,6 +109,7 @@ bool	 lflag;		/* -l: only show names of files with matches */
 bool	 mflag;		/* -m x: stop reading the files after x matches */
 long long mcount;	/* count for -m */
 long long mlimit;	/* requested value for -m */
+char     fileeol;	/* indicator for eol */
 bool	 nflag;		/* -n: show line numbers in front of matching lines */
 bool	 oflag;		/* -o: print only matching part */
 bool	 qflag;		/* -q: quiet mode (don't output anything) */
@@ -165,7 +166,7 @@ usage(void)
 	exit(2);
 }
 
-static const char	*optstr = "0123456789A:B:C:D:EFGHIJMLOPSRUVZabcd:e:f:hilm:nopqrsuvwxXy";
+static const char	*optstr = "0123456789A:B:C:D:EFGHIJMLOPSRUVZabcd:e:f:hilm:nopqrsuvwxXyz";
 
 static const struct option long_options[] =
 {
@@ -215,6 +216,7 @@ static const struct option long_options[] =
 	{"word-regexp",		no_argument,		NULL, 'w'},
 	{"line-regexp",		no_argument,		NULL, 'x'},
 	{"xz",			no_argument,		NULL, 'X'},
+	{"decompress",          no_argument,            NULL, 'z'},
 	{"decompress",          no_argument,            NULL, 'Z'},
 	{NULL,			no_argument,		NULL, 0}
 };
@@ -377,6 +379,7 @@ main(int argc, char *argv[])
 	newarg = 1;
 	prevoptind = 1;
 	needpattern = 1;
+	fileeol = '\n';
 
 	eopts = getenv("GREP_OPTIONS");
 
@@ -598,8 +601,11 @@ main(int argc, char *argv[])
 		case 'X':
 			filebehave = FILE_XZ;
 			break;
+		case 'z':
+			/* fallthrough */
 		case 'Z':
 			filebehave = FILE_GZIP;
+			fileeol = '\0';
 			break;
 		case BIN_OPT:
 			if (strcasecmp("binary", optarg) == 0)
