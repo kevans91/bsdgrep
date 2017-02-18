@@ -317,7 +317,7 @@ read_patterns(const char *fn)
 	len = 0;
 	line = NULL;
 	while ((rlen = getline(&line, &len, f)) != -1)
-		add_pattern(line, line[0] == '\n' ? 0 : (size_t)rlen);
+		add_pattern(line, line[0] == 0 || line[0] == '\n' ? 0 : (size_t)rlen);
 	free(line);
 	if (ferror(f))
 		err(2, "%s", fn);
