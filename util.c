@@ -181,11 +181,8 @@ grep_tree(char **argv)
 
 	fts_close(fts);
 
-	if(pwd != NULL)
-		free(pwd);
-
-	if(tdir != NULL)
-		free(tdir);
+	free(pwd);
+	free(tdir);
 
 	return (c);
 }
