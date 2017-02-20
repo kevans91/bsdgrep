@@ -372,7 +372,10 @@ expression are considered to be matching lines.
 Equivalent to
 .Fl i .
 Obsoleted.
-.It Fl Z , Fl z , Fl Fl decompress
+.It Fl z , Fl Fl null-data
+Treat input and output data as sequences of lines terminated by a 
+zero-byte instead of a newline.
+.It Fl Z , Fl Fl decompress
 Force
 .Nm grep
 to behave as
