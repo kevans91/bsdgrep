@@ -321,7 +321,7 @@ grep_open(const char *path)
 		goto error2;
 
 	/* Check for binary stuff, if necessary */
-	if (binbehave != BINFILE_TEXT && !(filebehave & FILE_GZIP) && memchr(bufpos, '\0', bufrem) != NULL)
+	if (binbehave != BINFILE_TEXT && fileeol != '\0' && memchr(bufpos, '\0', bufrem) != NULL)
 	f->binary = true;
 
 	return (f);

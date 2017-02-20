@@ -216,7 +216,7 @@ static const struct option long_options[] =
 	{"word-regexp",		no_argument,		NULL, 'w'},
 	{"line-regexp",		no_argument,		NULL, 'x'},
 	{"xz",			no_argument,		NULL, 'X'},
-	{"decompress",          no_argument,            NULL, 'z'},
+	{"null-data",          no_argument,            NULL, 'z'},
 	{"decompress",          no_argument,            NULL, 'Z'},
 	{NULL,			no_argument,		NULL, 0}
 };
@@ -605,10 +605,10 @@ main(int argc, char *argv[])
 			filebehave = FILE_XZ;
 			break;
 		case 'z':
-			/* fallthrough */
+			fileeol = '\0';
+			break;
 		case 'Z':
 			filebehave = FILE_GZIP;
-			fileeol = '\0';
 			break;
 		case BIN_OPT:
 			if (strcasecmp("binary", optarg) == 0)
