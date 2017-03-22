@@ -219,12 +219,13 @@ grep_fgetln(struct file *f, size_t *lenp)
 		if (bufrem == 0)
 			/* EOF: return partial line */
 			break;
-		if ((p = memchr(bufpos, fileeol, bufrem)) == NULL && filebehave != FILE_MMAP)
+		if ((p = memchr(bufpos, fileeol, bufrem)) == NULL &&
+		    filebehave != FILE_MMAP)
 			continue;
-		if (p == NULL)
-			/* mmap EOF: return partial line, consume rest of buffer */
+		if (p == NULL) {
+			/* mmap EOF: return partial line, consume buffer */
 			diff = len;
-		else {
+		} else {
 			/* got it: finish up the line (like code above) */
 			++p;
 			diff = p - bufpos;
