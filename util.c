@@ -52,10 +52,6 @@ __FBSDID("$FreeBSD$");
 #include "fastmatch.h"
 #include "grep.h"
 
-#ifndef MAX
-#define MAX(a,b)			((a > b) ? (a) : (b))
-#endif
-
 static int	 linesqueued;
 static int	 procline(struct str *l, int);
 
