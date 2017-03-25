@@ -261,7 +261,7 @@ procfile(const char *fn)
 				linesqueued++;
 				ctxover = false;
 			} else {
-				/* Indicate to procline() that we have ctx overlap, make sure queue is empty at this point */ 
+				/* Indicate to procline() that we have ctx overlap, make sure queue is empty at this point */
 				if (!ctxover)
 					clearqueue();
 				ctxover = true;
@@ -355,7 +355,7 @@ procline(struct str *l, int nottext)
 					r = REG_NOMATCH;
 			}
 			if (r == 0) {
-				lastmatches ++;
+				lastmatches++;
 				lastmatch = pmatch;
 				/* Skip over zero-length matches */
 				if (pmatch.rm_so == pmatch.rm_eo)
@@ -403,7 +403,7 @@ procline(struct str *l, int nottext)
 			break;
 		else if (st == nst && lastmatch.rm_so == lastmatch.rm_eo)
 			/* Zero-length match -- advance one more so we don't get stuck */
-			nst ++;
+			nst++;
 
 		/* Advance st based on previous matches */
 		st = nst;
@@ -544,13 +544,13 @@ printline(struct str *line, int sep, regmatch_t *matches, int m)
 				fwrite(line->dat + a, matches[i].rm_so - a, 1,
 				    stdout);
 			if (color) 
-				fprintf(stdout, "\33[%sm\33[K", color);
+				fprintf(stdout, "\33[%sm", color);
 
 				fwrite(line->dat + matches[i].rm_so, 
 				    matches[i].rm_eo - matches[i].rm_so, 1,
 				    stdout);
 			if (color) 
-				fprintf(stdout, "\33[m\33[K");
+				fprintf(stdout, "\33[00m\33[K");
 			a = matches[i].rm_eo;
 			if (oflag)
 				putchar('\n');
