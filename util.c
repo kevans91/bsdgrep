@@ -114,7 +114,7 @@ grep_tree(char **argv)
 	FTSENT *p;
 	int c, fts_flags;
 	bool ok;
-	char **tdir = NULL, *pwd = NULL;
+	char **tdir = NULL;
 
 	c = fts_flags = 0;
 
@@ -133,10 +133,10 @@ grep_tree(char **argv)
 	fts_flags |= FTS_NOSTAT | FTS_NOCHDIR;
 
 	if(argv[0] == NULL) {
-		tdir = grep_calloc(2, sizeof(char *));
-		if((pwd = getcwd(NULL, 0)) == NULL)
+		tdir = grep_malloc(2 * sizeof(char *));
+		if((tdir[0] = getcwd(NULL, 0)) == NULL)
 			err(2, "getcwd");
-		tdir[0] = pwd;
+		tdir[1] = NULL;
 	}
 
 	if (!(fts = fts_open((tdir != NULL ? tdir : argv), fts_flags, NULL)))
@@ -177,8 +177,10 @@ grep_tree(char **argv)
 
 	fts_close(fts);
 
-	free(pwd);
-	free(tdir);
+	if(tdir != NULL) {
+			free(tdir[0]);
+			free(tdir);
+	}
 
 	return (c);
 }
