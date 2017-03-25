@@ -32,9 +32,10 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
+#include <capsicum_helpers.h>
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
@@ -66,7 +67,7 @@ const char	*errstr[] = {
 /* 1*/	"(standard input)",
 /* 2*/	"cannot read bzip2 compressed file",
 /* 3*/	"unknown %s option",
-/* 4*/	"usage: %s [-abcDEFGHhIiJLlmnOoPqRSsUVvwxZ] [-A num] [-B num] [-C[num]]\n",
+/* 4*/	"usage: %s [-abcDEFGHhIiJLlmnOoPqRSsUVvwxZz] [-A num] [-B num] [-C[num]]\n",
 /* 5*/	"\t[-e pattern] [-f file] [--binary-files=value] [--color=when]\n",
 /* 6*/	"\t[--context[=num]] [--directories=action] [--label] [--line-buffered]\n",
 /* 7*/	"\t[--null] [pattern] [file ...]\n",
@@ -80,6 +81,10 @@ int		 eflags = REG_STARTEND;
 
 /* Shortcut for matching all cases like empty regex */
 bool		 matchall;
+
+/* Capsicum */
+cap_rights_t ro_rights;
+bool do_cap_enter = false;
 
 /* Searching patterns */
 unsigned int	 patterns;
@@ -146,6 +151,7 @@ enum {
 };
 
 static inline const char	*init_color(const char *);
+static int			last_included_file(int, char *[]);
 
 /* Housekeeping */
 bool	 first = true;	/* flag whether we are processing the first match */
@@ -310,14 +316,21 @@ read_patterns(const char *fn)
 
 	if ((f = fopen(fn, "r")) == NULL)
 		err(2, "%s", fn);
+	if (cap_rights_limit(fileno(f), &ro_rights) < 0 &&
+	    errno != ENOSYS)
+		err(2, "unable to limit rights on: %s", fn);
 	if ((fstat(fileno(f), &st) == -1) || (S_ISDIR(st.st_mode))) {
 		fclose(f);
 		return;
 	}
 	len = 0;
 	line = NULL;
-	while ((rlen = getline(&line, &len, f)) != -1)
-		add_pattern(line, line[0] == 0 || line[0] == '\n' ? 0 : (size_t)rlen);
+	while ((rlen = getline(&line, &len, f)) != -1) {
+		if(line[0] == 0)
+			continue;
+		add_pattern(line, line[0] == '\n' ? 0 : (size_t)rlen);
+	}
+
 	free(line);
 	if (ferror(f))
 		err(2, "%s", fn);
@@ -333,6 +346,27 @@ init_color(const char *d)
 	return (c != NULL && c[0] != '\0' ? c : d);
 }
 
+/**
+  * Returns the last argv index used as an input file, or just past the end if none are used
+ */
+static int
+last_included_file(int argc, char *argv[])
+{
+	int lastidx = argc, c;
+
+	if (!finclude && !fexclude)
+		return argc - 1;
+
+	for (c = 0; argc--; ++argv) {
+		if (!file_matching(*argv))
+			continue;
+
+		lastidx = c;
+	}
+
+	return lastidx;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -340,10 +374,11 @@ main(int argc, char *argv[])
 	char *ep;
 	const char *pn;
 	unsigned long long l;
-	unsigned int aargc, eargc, i;
+	unsigned int aargc, eargc, i, largc;
 	int c, lastc, needpattern, newarg, prevoptind;
 
 	setlocale(LC_ALL, "");
+	cap_rights_init(&ro_rights, CAP_FSTAT, CAP_READ);
 
 #ifndef WITHOUT_NLS
 	catalog = catopen("grep", NL_CAT_LOCALE);
@@ -734,17 +769,34 @@ main(int argc, char *argv[])
 	if ((aargc == 0 || aargc == 1) && !Hflag)
 		hflag = true;
 
-	if (aargc == 0 && (dirbehave != DIR_RECURSE || patterns == 0))
-		exit(!procfile("-"));
+	if (caph_limit_stdio() == -1)
+		err(2, "unable to limit stdio");
 
+	if (aargc == 0 && (dirbehave != DIR_RECURSE || patterns == 0))
+		if (cap_enter() < 0 && errno != ENOSYS)
+			err(2, "unable to enter capability mode");
+		exit(!procfile("-"));
+	}
+
+	/*
+	 * The recursive case does not currently enter capabilities mode
+	 * at all due to the lack of casper file service. We should revise
+	 * this to encompas all recursive and non-recursive cases later
+	 * when a casper file service or similar approach becomes available.
+	 */
 	if (dirbehave == DIR_RECURSE)
 		c = grep_tree(aargv);
-	else
-		for (c = 0; aargc--; ++aargv) {
+	else {
+		largc = last_included_file(aargc, aargv);
+		for (c = 0; aargc--; ++aargv, --largc) {
 			if ((finclude || fexclude) && !file_matching(*aargv))
 				continue;
+				/* Upon the last usable file argument, we enter capabilities mode */
+			if (largc == 0)
+				do_cap_enter = true;
 			c+= procfile(*aargv);
 		}
+	}
 
 #ifndef WITHOUT_NLS
 	catclose(catalog);

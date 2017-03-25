@@ -36,7 +36,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 
 #include <err.h>
 #include <errno.h>
@@ -262,6 +261,12 @@ grep_open(const char *path)
 		f->fd = STDIN_FILENO;
 	} else if ((f->fd = open(path, O_RDONLY)) == -1)
 		goto error1;
+
+	if (f->fd != STDIN_FILENO && cap_rights_limit(f->fd, &ro_rights) < 0 &&
+	    errno != ENOSYS)
+		err(2, "unable to limit rights on: %s", path);
+	if (do_cap_enter && cap_enter() < 0 && errno != ENOSYS)
+		err(2, "unable to enter capability mode");
 
 	if (filebehave == FILE_MMAP) {
 		struct stat st;

@@ -29,6 +29,8 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/capsicum.h>
+
 #include <bzlib.h>
 #include <limits.h>
 #include <regex.h>
@@ -120,6 +122,9 @@ extern char fileeol;
 extern char	*label;
 extern const char *color;
 extern int	 binbehave, devbehave, dirbehave, filebehave, grepbehave, linkbehave;
+
+extern cap_rights_t ro_rights;
+extern bool do_cap_enter;
 
 extern bool	 file_err, first, matchall, prev;
 extern int	 tail;
