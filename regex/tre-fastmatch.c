@@ -350,7 +350,7 @@ static int	fastcmp(const fastmatch_t *fg, const void *data,
  * Fills in the good suffix table for SB/MB strings.
  */
 #define FILL_BMGS							\
-  if (!fg->hasdot)							\
+  if (fg->len > 0 && !fg->hasdot)					\
     {									\
       fg->sbmGs = xmalloc(fg->len * sizeof(int));			\
       if (!fg->sbmGs)							\
@@ -360,13 +360,17 @@ static int	fastcmp(const fastmatch_t *fg, const void *data,
       else								\
 	_FILL_BMGS(fg->sbmGs, fg->pattern, fg->len, false);		\
       DPRINT_BMGS(fg->len, "GS shift for pos %d is %d\n", fg->sbmGs);	\
+    }									\
+  else									\
+    {									\
+      fg->sbmGs = NULL;							\
     }
 
 /*
  * Fills in the good suffix table for wide strings.
  */
 #define FILL_BMGS_WIDE							\
-  if (!fg->hasdot)							\
+  if (fg->wlen > 0 && !fg->hasdot)					\
     {									\
       fg->bmGs = xmalloc(fg->wlen * sizeof(int));			\
       if (!fg->bmGs)							\
@@ -377,6 +381,10 @@ static int	fastcmp(const fastmatch_t *fg, const void *data,
 	_FILL_BMGS(fg->bmGs, fg->wpattern, fg->wlen, true);		\
       DPRINT_BMGS(fg->wlen, "GS shift (wide) for pos %d is %d\n",	\
 		  fg->bmGs);						\
+    }									\
+  else									\
+    {									\
+	fg->bmGs = NULL;						\
     }
 
 #define _FILL_BMGS(arr, pat, plen, wide)				\
