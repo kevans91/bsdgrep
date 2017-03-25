@@ -424,10 +424,6 @@ procline(struct str *l, int nottext)
 				printf("--\n");
 			tail = Aflag;
 			if (Bflag > 0) {
-				/* As well as anything before it */
-//				if (!first && !prev && !ctxover)
-//					printf("--\n");
-				/* Print the queue and clear ctxover if we're printing previous context */
 				printqueue();
 				ctxover = false;
 			}
